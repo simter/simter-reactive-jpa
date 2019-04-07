@@ -107,11 +107,6 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
 
     @Override
     public Flux<T> getResultList() {
-      return wrapper.fromIterable(() -> doInTransaction(TypedQuery::getResultList));
-    }
-
-    @Override
-    public Flux<T> getResultStream() {
       return wrapper.fromStream(() -> doInTransaction(TypedQuery::getResultStream));
     }
 

@@ -20,6 +20,4 @@ public interface ReactiveTypedQuery<T> {
   Mono<T> getSingleResult();
 
   Flux<T> getResultList();
-
-  Flux<T> getResultStream();
 }
