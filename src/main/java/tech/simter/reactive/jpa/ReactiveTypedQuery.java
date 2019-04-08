@@ -73,4 +73,17 @@ public interface ReactiveTypedQuery<T> {
    * </ul>
    */
   Flux<T> getResultList();
+
+  /**
+   * Execute an update or delete statement.
+   *
+   * @return {@link Mono} with the number of entities updated or deleted or {@link Mono#error(Throwable)} with:
+   * <ul>
+   * <li>{@link IllegalStateException} if called for a Java Persistence query language UPDATE or DELETE statement.
+   * <li>{@link TransactionRequiredException} if there is no transaction or the persistence context has not been joined to the transaction.
+   * <li>{@link QueryTimeoutException} if the statement execution exceeds the query timeout value set and only the statement is rolled back.
+   * <li>{@link PersistenceException} if the query execution exceeds the query timeout value set and the transaction is rolled back.
+   * </ul>
+   */
+  Mono<Integer> executeUpdate();
 }

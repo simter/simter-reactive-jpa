@@ -110,6 +110,11 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
       return wrapper.fromStream(() -> doInTransaction(TypedQuery::getResultStream));
     }
 
+    @Override
+    public Mono<Integer> executeUpdate() {
+      return wrapper.fromCallable(() -> doInTransaction(TypedQuery::executeUpdate));
+    }
+
     private <R> R doInTransaction(Function<TypedQuery<T>, R> fn) {
       EntityManager em = createEntityManager();
       em.getTransaction().begin();
