@@ -6,10 +6,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.simter.reactive.jpa.ReactiveEntityManager;
 import tech.simter.reactive.jpa.ReactiveJpaWrapper;
+import tech.simter.reactive.jpa.ReactiveQuery;
 import tech.simter.reactive.jpa.ReactiveTypedQuery;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,6 +72,11 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
     return new ReactiveTypedQueryImpl<>(qlString, resultClass);
   }
 
+  @Override
+  public ReactiveQuery createQuery(String qlString) {
+    return new ReactiveQueryImpl(qlString);
+  }
+
   private class ReactiveTypedQueryImpl<T> implements ReactiveTypedQuery<T> {
     private final Map<String, Object> params = new HashMap<>();
     private String qlString;
@@ -110,16 +117,76 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
       return wrapper.fromIterable(() -> doInTransaction(TypedQuery::getResultList));
     }
 
-    @Override
-    public Mono<Integer> executeUpdate() {
-      return wrapper.fromCallable(() -> doInTransaction(TypedQuery::executeUpdate));
-    }
-
     private <R> R doInTransaction(Function<TypedQuery<T>, R> fn) {
       EntityManager em = createEntityManager();
       em.getTransaction().begin();
       try {
         TypedQuery<T> query = em.createQuery(qlString, resultClass);
+        if (!params.isEmpty()) params.forEach(query::setParameter);
+        if (startPosition > 0) query.setFirstResult(startPosition);
+        if (maxResult > 0) query.setMaxResults(maxResult);
+
+        R result = fn.apply(query);
+
+        em.getTransaction().commit();
+        return result;
+      } catch (Exception e) {
+        em.getTransaction().rollback();
+        throw e;
+      }
+    }
+  }
+
+  private class ReactiveQueryImpl implements ReactiveQuery {
+    private final Map<String, Object> params = new HashMap<>();
+    private String qlString;
+    private int startPosition;
+    private int maxResult;
+
+    ReactiveQueryImpl(String qlString) {
+      this.qlString = qlString;
+    }
+
+    @Override
+    public ReactiveQuery setParameter(String name, Object value) {
+      params.put(name, value);
+      return this;
+    }
+
+    @Override
+    public ReactiveQuery setFirstResult(int startPosition) {
+      this.startPosition = startPosition;
+      return this;
+    }
+
+    @Override
+    public ReactiveQuery setMaxResults(int maxResult) {
+      this.maxResult = maxResult;
+      return this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Mono<T> getSingleResult() {
+      return wrapper.fromCallable(() -> doInTransaction(query -> (T) query.getSingleResult()));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Flux<T> getResultList() {
+      return wrapper.fromIterable(() -> doInTransaction(Query::getResultList));
+    }
+
+    @Override
+    public Mono<Integer> executeUpdate() {
+      return wrapper.fromCallable(() -> doInTransaction(Query::executeUpdate));
+    }
+
+    private <R> R doInTransaction(Function<Query, R> fn) {
+      EntityManager em = createEntityManager();
+      em.getTransaction().begin();
+      try {
+        Query query = em.createQuery(qlString);
         if (!params.isEmpty()) params.forEach(query::setParameter);
         if (startPosition > 0) query.setFirstResult(startPosition);
         if (maxResult > 0) query.setMaxResults(maxResult);
