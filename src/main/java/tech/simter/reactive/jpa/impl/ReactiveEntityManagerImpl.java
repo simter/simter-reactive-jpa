@@ -68,6 +68,30 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
   }
 
   @Override
+  public <E> Mono<Void> remove(E... entities) {
+    if (entities == null || entities.length == 0) return Mono.empty();
+    else {
+      return wrapper.fromRunnable(() -> {
+        EntityManager em = createEntityManager();
+        em.getTransaction().begin();
+        for (E entity : entities) em.remove(entity);
+        em.getTransaction().commit();
+      });
+    }
+  }
+
+  @Override
+  public <T> Mono<T> find(Class<T> entityClass, Object primaryKey) {
+    return wrapper.fromCallable(() -> {
+      EntityManager em = createEntityManager();
+      em.getTransaction().begin();
+      T entity = em.find(entityClass, primaryKey);
+      em.getTransaction().commit();
+      return entity;
+    });
+  }
+
+  @Override
   public <T> ReactiveTypedQuery<T> createQuery(String qlString, Class<T> resultClass) {
     return new ReactiveTypedQueryImpl<>(qlString, resultClass);
   }

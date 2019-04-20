@@ -16,7 +16,7 @@ public interface ReactiveEntityManager {
    *
    * @param entities the entities to persist
    * @param <E>      the entity type
-   * @return a {@link Mono}
+   * @return a complete {@link Mono} signal
    */
   <E> Mono<Void> persist(E... entities);
 
@@ -30,6 +30,24 @@ public interface ReactiveEntityManager {
   <E> Flux<E> merge(E... entities);
 
   /**
+   * Remove the entities in a transaction with auto commit when this {@link Mono} be subscribed.
+   *
+   * @param entities the entities to remove
+   * @param <E>      the entity type
+   * @return a complete {@link Mono} signal
+   */
+  <E> Mono<Void> remove(E... entities);
+
+  /**
+   * Find by primary key in a transaction with auto commit when this {@link Mono} be subscribed.
+   *
+   * @param entityClass entity class
+   * @param primaryKey  primary key
+   * @return a {@link Mono} with the found entity or {@link Mono#empty()} if the entity does not exist
+   */
+  <T> Mono<T> find(Class<T> entityClass, Object primaryKey);
+
+  /**
    * Reactive encapsulation for {@link EntityManager#createQuery(String, Class)}.
    *
    * @param qlString    a Java Persistence query string
@@ -41,8 +59,7 @@ public interface ReactiveEntityManager {
   /**
    * Reactive encapsulation for {@link EntityManager#createQuery(String)}.
    *
-   * @param qlString    a Java Persistence query string
-   * @param resultClass the type of the query result
+   * @param qlString a Java Persistence query string
    * @return a {@link Mono} with the new query instance
    */
   ReactiveQuery createQuery(String qlString);
