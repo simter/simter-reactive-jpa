@@ -48,6 +48,7 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
         em.getTransaction().begin();
         for (E entity : entities) em.persist(entity);
         em.getTransaction().commit();
+        em.close();
       });
     }
   }
@@ -62,6 +63,7 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
         em.getTransaction().begin();
         for (E entity : entities) merged.add(em.merge(entity));
         em.getTransaction().commit();
+        em.close();
         return merged;
       });
     }
@@ -74,8 +76,9 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
       return wrapper.fromRunnable(() -> {
         EntityManager em = createEntityManager();
         em.getTransaction().begin();
-        for (E entity : entities) em.remove(entity);
+        for (E entity : entities) em.remove(em.merge(entity));
         em.getTransaction().commit();
+        em.close();
       });
     }
   }
@@ -87,6 +90,7 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
       em.getTransaction().begin();
       T entity = em.find(entityClass, primaryKey);
       em.getTransaction().commit();
+      em.close();
       return entity;
     });
   }
@@ -153,6 +157,7 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
         R result = fn.apply(query);
 
         em.getTransaction().commit();
+        em.close();
         return result;
       } catch (Exception e) {
         em.getTransaction().rollback();
@@ -218,6 +223,7 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
         R result = fn.apply(query);
 
         em.getTransaction().commit();
+        em.close();
         return result;
       } catch (Exception e) {
         em.getTransaction().rollback();
