@@ -6,11 +6,11 @@ import reactor.core.publisher.Mono;
 import javax.persistence.*;
 
 /**
- * A interface relative to {@link TypedQuery} but with minimal usage api for reactive world.
+ * A interface relative to {@link Query} but with minimal usage api for reactive world.
  *
  * @author RJ
  */
-public interface ReactiveTypedQuery<T> {
+public interface ReactiveQuery {
   /**
    * Bind an argument value to a named parameter.
    *
@@ -20,7 +20,7 @@ public interface ReactiveTypedQuery<T> {
    * @throws IllegalArgumentException if the parameter name does not correspond to a parameter of the query
    *                                  or if the argument is of incorrect type
    */
-  ReactiveTypedQuery<T> setParameter(String name, Object value);
+  ReactiveQuery setParameter(String name, Object value);
 
   /**
    * Set the position of the first result to retrieve.
@@ -29,7 +29,7 @@ public interface ReactiveTypedQuery<T> {
    * @return the same query instance
    * @throws IllegalArgumentException if the argument is negative
    */
-  ReactiveTypedQuery<T> setFirstResult(int startPosition);
+  ReactiveQuery setFirstResult(int startPosition);
 
   /**
    * Set the maximum number of results to retrieve.
@@ -38,7 +38,7 @@ public interface ReactiveTypedQuery<T> {
    * @return the same query instance
    * @throws IllegalArgumentException if the argument is negative
    */
-  ReactiveTypedQuery<T> setMaxResults(int maxResult);
+  ReactiveQuery setMaxResults(int maxResult);
 
   /**
    * Execute a SELECT query that returns a single result.
@@ -55,7 +55,7 @@ public interface ReactiveTypedQuery<T> {
    * <li>{@link PersistenceException} if the query execution exceeds the query timeout value set and the transaction is rolled back.
    * </ul>
    */
-  Mono<T> getSingleResult();
+  <T> Mono<T> getSingleResult();
 
   /**
    * Execute a SELECT query and return the query results.
@@ -72,5 +72,18 @@ public interface ReactiveTypedQuery<T> {
    * <li>{@link PersistenceException} if the query execution exceeds the query timeout value set and the transaction is rolled back.
    * </ul>
    */
-  Flux<T> getResultList();
+  <T> Flux<T> getResultList();
+
+  /**
+   * Execute an update or delete statement.
+   *
+   * @return {@link Mono} with the number of entities updated or deleted or {@link Mono#error(Throwable)} with:
+   * <ul>
+   * <li>{@link IllegalStateException} if called for a Java Persistence query language UPDATE or DELETE statement.
+   * <li>{@link TransactionRequiredException} if there is no transaction or the persistence context has not been joined to the transaction.
+   * <li>{@link QueryTimeoutException} if the statement execution exceeds the query timeout value set and only the statement is rolled back.
+   * <li>{@link PersistenceException} if the query execution exceeds the query timeout value set and the transaction is rolled back.
+   * </ul>
+   */
+  Mono<Integer> executeUpdate();
 }

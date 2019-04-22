@@ -16,7 +16,7 @@ public interface ReactiveEntityManager {
    *
    * @param entities the entities to persist
    * @param <E>      the entity type
-   * @return a {@link Mono}
+   * @return a complete {@link Mono} signal
    */
   <E> Mono<Void> persist(E... entities);
 
@@ -30,15 +30,37 @@ public interface ReactiveEntityManager {
   <E> Flux<E> merge(E... entities);
 
   /**
-   * Create an instance of <code>ReactiveTypedQuery</code> for executing a Java Persistence query language statement.
-   * The select list of the query must contain only a single item, which must be assignable to the type specified by
-   * the <code>resultClass</code> argument.
+   * Remove the entities in a transaction with auto commit when this {@link Mono} be subscribed.
+   *
+   * @param entities the entities to remove
+   * @param <E>      the entity type
+   * @return a complete {@link Mono} signal
+   */
+  <E> Mono<Void> remove(E... entities);
+
+  /**
+   * Find by primary key in a transaction with auto commit when this {@link Mono} be subscribed.
+   *
+   * @param entityClass entity class
+   * @param primaryKey  primary key
+   * @return a {@link Mono} with the found entity or {@link Mono#empty()} if the entity does not exist
+   */
+  <T> Mono<T> find(Class<T> entityClass, Object primaryKey);
+
+  /**
+   * Reactive encapsulation for {@link EntityManager#createQuery(String, Class)}.
    *
    * @param qlString    a Java Persistence query string
    * @param resultClass the type of the query result
-   * @return the new query instance
-   * @throws IllegalArgumentException if the query string is found to be invalid or if the query result is found to
-   *                                  not be assignable to the specified type
+   * @return a {@link Mono} with the new query instance
    */
   <T> ReactiveTypedQuery<T> createQuery(String qlString, Class<T> resultClass);
+
+  /**
+   * Reactive encapsulation for {@link EntityManager#createQuery(String)}.
+   *
+   * @param qlString a Java Persistence query string
+   * @return a {@link Mono} with the new query instance
+   */
+  ReactiveQuery createQuery(String qlString);
 }

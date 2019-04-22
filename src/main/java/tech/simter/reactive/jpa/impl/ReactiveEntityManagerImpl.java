@@ -6,10 +6,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.simter.reactive.jpa.ReactiveEntityManager;
 import tech.simter.reactive.jpa.ReactiveJpaWrapper;
+import tech.simter.reactive.jpa.ReactiveQuery;
 import tech.simter.reactive.jpa.ReactiveTypedQuery;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,6 +48,7 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
         em.getTransaction().begin();
         for (E entity : entities) em.persist(entity);
         em.getTransaction().commit();
+        em.close();
       });
     }
   }
@@ -60,14 +63,46 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
         em.getTransaction().begin();
         for (E entity : entities) merged.add(em.merge(entity));
         em.getTransaction().commit();
+        em.close();
         return merged;
       });
     }
   }
 
   @Override
+  public <E> Mono<Void> remove(E... entities) {
+    if (entities == null || entities.length == 0) return Mono.empty();
+    else {
+      return wrapper.fromRunnable(() -> {
+        EntityManager em = createEntityManager();
+        em.getTransaction().begin();
+        for (E entity : entities) em.remove(em.merge(entity));
+        em.getTransaction().commit();
+        em.close();
+      });
+    }
+  }
+
+  @Override
+  public <T> Mono<T> find(Class<T> entityClass, Object primaryKey) {
+    return wrapper.fromCallable(() -> {
+      EntityManager em = createEntityManager();
+      em.getTransaction().begin();
+      T entity = em.find(entityClass, primaryKey);
+      em.getTransaction().commit();
+      em.close();
+      return entity;
+    });
+  }
+
+  @Override
   public <T> ReactiveTypedQuery<T> createQuery(String qlString, Class<T> resultClass) {
     return new ReactiveTypedQueryImpl<>(qlString, resultClass);
+  }
+
+  @Override
+  public ReactiveQuery createQuery(String qlString) {
+    return new ReactiveQueryImpl(qlString);
   }
 
   private class ReactiveTypedQueryImpl<T> implements ReactiveTypedQuery<T> {
@@ -110,11 +145,6 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
       return wrapper.fromIterable(() -> doInTransaction(TypedQuery::getResultList));
     }
 
-    @Override
-    public Mono<Integer> executeUpdate() {
-      return wrapper.fromCallable(() -> doInTransaction(TypedQuery::executeUpdate));
-    }
-
     private <R> R doInTransaction(Function<TypedQuery<T>, R> fn) {
       EntityManager em = createEntityManager();
       em.getTransaction().begin();
@@ -127,6 +157,73 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
         R result = fn.apply(query);
 
         em.getTransaction().commit();
+        em.close();
+        return result;
+      } catch (Exception e) {
+        em.getTransaction().rollback();
+        throw e;
+      }
+    }
+  }
+
+  private class ReactiveQueryImpl implements ReactiveQuery {
+    private final Map<String, Object> params = new HashMap<>();
+    private String qlString;
+    private int startPosition;
+    private int maxResult;
+
+    ReactiveQueryImpl(String qlString) {
+      this.qlString = qlString;
+    }
+
+    @Override
+    public ReactiveQuery setParameter(String name, Object value) {
+      params.put(name, value);
+      return this;
+    }
+
+    @Override
+    public ReactiveQuery setFirstResult(int startPosition) {
+      this.startPosition = startPosition;
+      return this;
+    }
+
+    @Override
+    public ReactiveQuery setMaxResults(int maxResult) {
+      this.maxResult = maxResult;
+      return this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Mono<T> getSingleResult() {
+      return wrapper.fromCallable(() -> doInTransaction(query -> (T) query.getSingleResult()));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Flux<T> getResultList() {
+      return wrapper.fromIterable(() -> doInTransaction(Query::getResultList));
+    }
+
+    @Override
+    public Mono<Integer> executeUpdate() {
+      return wrapper.fromCallable(() -> doInTransaction(Query::executeUpdate));
+    }
+
+    private <R> R doInTransaction(Function<Query, R> fn) {
+      EntityManager em = createEntityManager();
+      em.getTransaction().begin();
+      try {
+        Query query = em.createQuery(qlString);
+        if (!params.isEmpty()) params.forEach(query::setParameter);
+        if (startPosition > 0) query.setFirstResult(startPosition);
+        if (maxResult > 0) query.setMaxResults(maxResult);
+
+        R result = fn.apply(query);
+
+        em.getTransaction().commit();
+        em.close();
         return result;
       } catch (Exception e) {
         em.getTransaction().rollback();
