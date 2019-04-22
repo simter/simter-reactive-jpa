@@ -1,6 +1,5 @@
 package tech.simter.reactive.jpa;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.persistence.EntityManager;
@@ -19,15 +18,6 @@ public interface ReactiveEntityManager {
    * @return a complete {@link Mono} signal
    */
   <E> Mono<Void> persist(E... entities);
-
-  /**
-   * Merge entities in a transaction with auto commit when this {@link Mono} be subscribed.
-   *
-   * @param entities the entities to merge
-   * @param <E>      the entity type
-   * @return a {@link Flux} with the merged entity
-   */
-  <E> Flux<E> merge(E... entities);
 
   /**
    * Remove the entities in a transaction with auto commit when this {@link Mono} be subscribed.

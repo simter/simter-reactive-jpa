@@ -13,9 +13,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -49,22 +47,6 @@ public class ReactiveEntityManagerImpl implements ReactiveEntityManager {
         for (E entity : entities) em.persist(entity);
         em.getTransaction().commit();
         em.close();
-      });
-    }
-  }
-
-  @SafeVarargs
-  public final <E> Flux<E> merge(E... entities) {
-    if (entities == null || entities.length == 0) return Flux.empty();
-    else {
-      return wrapper.fromIterable(() -> {
-        List<E> merged = new ArrayList<>();
-        EntityManager em = createEntityManager();
-        em.getTransaction().begin();
-        for (E entity : entities) merged.add(em.merge(entity));
-        em.getTransaction().commit();
-        em.close();
-        return merged;
       });
     }
   }
