@@ -1,5 +1,9 @@
 # simter-reactive-jpa changelog
 
+## 0.2.0 - 2020-03-01
+
+- Upgrade to simter-dependencies-1.3.0-M13
+
 ## 0.1.0 - 2019-07-03
 
 - Change parent to simter-dependencies-1.2.0
