@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
-import reactor.test.test
+import reactor.kotlin.test.test
 import tech.simter.reactive.jpa.ReactiveEntityManager
 import tech.simter.reactive.jpa.ReactiveJpaWrapper
 import java.util.*
@@ -21,19 +21,19 @@ class ReactiveJpaWrapperImplTest @Autowired constructor(
   private val rem: ReactiveEntityManager
 ) {
   @Configuration
-  open class Cfg {
+  class Cfg {
     @Bean
-    open fun entityManagerFactory(): EntityManagerFactory {
+    fun entityManagerFactory(): EntityManagerFactory {
       return Persistence.createEntityManagerFactory("default")
     }
 
     @Bean
-    open fun reactiveJpaWrapper(): ReactiveJpaWrapper {
+    fun reactiveJpaWrapper(): ReactiveJpaWrapper {
       return ReactiveJpaWrapperImpl(null)
     }
 
     @Bean
-    open fun reactiveEntityManager(wrapper: ReactiveJpaWrapper, emf: EntityManagerFactory): ReactiveEntityManager {
+    fun reactiveEntityManager(wrapper: ReactiveJpaWrapper, emf: EntityManagerFactory): ReactiveEntityManager {
       return ReactiveEntityManagerImpl(wrapper, emf)
     }
   }

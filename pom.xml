@@ -29,6 +29,11 @@
 
     <!-- test -->
     <dependency>
+      <groupId>io.projectreactor.kotlin</groupId>
+      <artifactId>reactor-kotlin-extensions</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
