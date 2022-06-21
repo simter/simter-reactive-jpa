@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * A {@link ReactiveJpaWrapper} implementation for async run blocking JPA method.
  * <p>
- * By default all blocking JPA method run on {@link Schedulers#elastic()}.
+ * By default, all blocking JPA method run on {@link Schedulers#boundedElastic()}.
  * This {@link Scheduler} could be replaced by a spring bean with name 'reactiveJpaScheduler'.
  *
  * @author RJ
@@ -31,7 +31,7 @@ public class ReactiveJpaWrapperImpl implements ReactiveJpaWrapper {
   @Autowired(required = false)
   public ReactiveJpaWrapperImpl(@Qualifier("reactiveJpaScheduler") Scheduler scheduler) {
     this.scheduler = scheduler;
-    if (this.scheduler == null) this.scheduler = Schedulers.elastic();
+    if (this.scheduler == null) this.scheduler = Schedulers.boundedElastic();
   }
 
   private Scheduler scheduler;
